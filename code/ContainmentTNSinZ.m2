@@ -1,4 +1,4 @@
---ContainmentTNSinZ.m2
+-- ContainmentTNSinZ.m2
 
 -- the script verifies the containment of the tensor network variety TNS(C3,(2,2,2),nn) 
 -- in the variety Z_(n2,n3,2) described in the proof of the Theorem.
@@ -8,20 +8,16 @@ m = 2
 nn = (2,4,4)
 
 -- set up of the vector spaces involved, regarded as degree 1 components of polynomial rings
-WWW = QQ; -- W spaces
-VVV = QQ; -- V spaces
-HHH = QQ; -- Hom spaces
 ALL = QQ;
 for i from 1 to d do (
     V_i = QQ[v_(i,0)..v_(i,nn_(i-1)-1)];
-    W_i = QQ[w_(i,0,0)..w_(i,m-1,m-1)];
     H_i = QQ[h_(i,0,(0,0))..h_(i,nn_(i-1)-1,(m-1,m-1))];
-    VVV = VVV ** V_i;
-    WWW = WWW ** W_i;
-    HHH = HHH ** H_i;
-    ALL = ALL ** W_i **V_i ** H_i)
-use(ALL)
+    )
 
+VVV = V_1**V_2**V_3 -- V spaces
+HHH = H_1**H_2**H_3 -- hom spaces
+
+ALL = VVV**HHH
 -- normalization described in the proof
 -- the homomorphism X3 is entirely fixed by using the GL(V3) action
 -- the first matrix describing the homomorphism X1 is normalized to be a rank one matrix with a single nonzero entries using the GL(V1) and the gauge action 

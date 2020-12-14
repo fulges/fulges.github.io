@@ -53,3 +53,4 @@ expDim = sum(d, i-> m^2*nn_i) -d+1 - sum(d, i-> m^2-1)
 -- the dimension of the ambient space
 ambDim = product(toList nn) 
 
+
