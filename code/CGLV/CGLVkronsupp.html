@@ -1,0 +1,115 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head><title>CGLVkronsupp</title></head><body><header>
+    </header><h3> Supplementary Files for </h3><h3>
+    </h3><h1> Kronecker Powers of Tensors and Strassen's Laser Method </h1>
+    <h3> by A. Conner, F. Gesmundo, J. M. Landsberg, E. Ventura</h3>
+We collect the supplementary files required to complete the computer
+calculations described in the paper. The softwares we use are <a href="http://www.sagemath.org/">Sage</a> and <a href="http://www2.macaulay2.com/Macaulay2/">Macaulay2</a>.
+
+The files are collected in different appendices:
+
+
+<h2>Appendix A: A randomly chosen tensor in C3 x C3 x C3 </h2>
+This data file addresses the Claim of Theorem 2.8. We provide the
+coordinates of a randomly chosen tensor in C3 \otimes C3 \otimes C3 and
+an approximate decomposition of its Kronecker square.<br><br>
+
+We include one file, with enclosed documentation. It contains the following two pieces of data:
+<u1>
+  <li> the coordinates of a tensor T in C3 \otimes C3 \otimes C3,
+represented as three matrices of size 3x3, M_1,M_2,M_3: in coordinates
+T_ijk = (M_i)_jk. The entries of the matrices were randomly chosen from
+the uniform distribution on [-1,1];</li>
+  <li> the coordinates of 22
+rank one tensors in C9 \otimes C9 \otimes C9, forming a rank 22
+decomposition of T \boxtimes T. This is a list of 22 elements
+Z_1,...,Z_22. Each element Z_j is a list of 3 elements a,b,c. The
+elements a,b,c are matrices of size 3x3 representing the coordinates of
+three vectors in C9 = C3 \otimes C3. This is the same representation as
+the one of Section 5 of the paper.</li>
+</u1>
+<br>
+
+Download the file <a href="genericsquare3.txt">here</a>.
+
+<br><br>
+
+<h2>Appendix B: Rank 18 Decomposition of 3x3 determinant </h2>
+This is a Macaulay2 file which verifies the Rank 18 decomposition for the determinant polynomial, Theorem 4.1. It is one file, with enclosed
+documentation.
+<br><br>
+
+Download the file <a href="Det3_Rank18.m2">here</a>.
+
+<br><br>
+
+
+<h2>Appendix C: Border Rank 17 Decomposition of 3x3 determinant </h2>
+This is a set of files addressing Claims made in the proof of Theorem 4.2. The set consists of 7 files, which can be downloaded in
+an archive tar.gz file.
+<br><br>
+We include seven files with enclosed documentation. The role of each file is briefly explained below:
+<u1>
+  <li>checkingType1eqns.m2: A Macaulay2 file verifying the equations of type 1, as explained in the paper;</li>
+  <li>checkingType2eqns.m2: A Macaulay2 file verifying the equations of type 2, as explained in the paper;</li>
+  <li>eqnsType1.m2: The list of equations of type 1, for easy access: they can be computed directly as well;</li>
+  <li>eqnsType2.m2: The list of equations of type 2, for easy access: they can be computed directly as well;</li>
+  <li>monomialsType1.m2: The monomials appearing in equations of type 1, with the corresponding expression in terms of the root y*;</li>
+  <li>monomialsType2.m2:
+The monomials appearing in equations of type 2, with the corresponding
+expression in terms of the chosen root u in each equation;</li>
+  <li>yy_exps.m2: The expressions of the elements y_j in terms of the root y*.</li>
+</u1>
+
+<br>
+Download the archive file <a href="Det3_borderRank17.tar.gz">here</a>.
+<br><br>For the reader's convenience, we include the minimal polynomials of the
+<br>
+roots z_i&nbsp; with an approximation of their value in&nbsp; <br>
+&nbsp;det_br_17_entries.txt&nbsp; on the border rank 17 decomposition. &nbsp;
+
+<h2>Appendix D: Matrices of Koszul flattenings of Coppersmith-Winograd powers</h2>This
+set of files addresses the Claims on the matrices representing the
+Koszul flattenings of the Kronecker square and the Kronecker cube of
+the small Coppersmith-Winograd tensor, in the proof of Theorem 3.3 and
+Theorem 3.4. The set consists of three files, which can be downloaded in an archive tar.gz file.
+<br><br>
+We include three files with enclosed documentation. The role of each file is briefly explained below:
+<u1>
+  <li>cwsquare.txt: A data file for easy access to the four
+matrices Phi_1, ... , Phi_4 describing the map on the multiplicity
+spaces in the proof of Theorem 2.1;</li>
+  <li>cwcube.txt: A data file
+for easy access to the eight matrices Psi_1, ... , Psi_8 describing the
+map on the multiplicity spaces in the proof of Theorem 2.2;</li>
+  <li>cwmatrices.sage:&nbsp; A sage file: it generates the relevant matrices using the method
+  <br>
+described in Section 6 of the paper, and computes their ranks</li>
+</u1>
+<br>
+Download the archive file <a href="cwPowers.tar.gz">here</a>.
+<br><br>
+
+<h2>Appendix E: Tight tensors in C3 x C3 x C3</h2>This is a Macaulay2
+file addressing the Claims made in the proofs of Section 5.
+Documentation is enclosed and a description of the various parts of the
+file is given in the paper.
+<br><br>
+Download the file <a href="symmetryTightSupports.m2">here</a>.
+
+<br><br>
+
+
+<h2>Appendix F: Decompositions of Squares of Tight tensors</h2>
+This set of files contains the numerical decomposition showing the upper bounds for the Kronecker square of the tight tensors listed in Section 5.2. The archive contains 6 files, corresponding to the six tensors with numerical upper bound.
+
+To give a decomposition with r summands, a file provides r groups of 27 lines, recording the coefficients of the three factors of the corresponding rank one element. 
+
+<br><br>
+Download the file <a href="decompositionsTightSupports.tar.gz">here</a>.
+
+<br><br>
+
+
+</body></html>
