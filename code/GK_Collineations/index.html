@@ -9,18 +9,24 @@
 
 <h2>The collineation variety in C3xC2xCm</h2>
 <p>
-  This script verifies the claims in Thm. 4.1. We study the 2nd collineation variety of tensors in C3xC2xCm with m at most 6, following the classification of Landsberg's <em>Tensors: Geometry and Applications</em>, Section 10.3.
-
-  For every orbit, we write the pencil of 3xm matrices as in the classification, we compute the associated net of 2xm matrices and we determine the associated collineation variety.
+  This script verifies the claims in Thm. 4.2. We study the 2nd collineation variety of tensors in C3xC2xCm with m at most 6, following the classification of Landsberg's <em>Tensors: Geometry and Applications</em>, Section 10.3. For every orbit, we write the pencil of 3xm matrices as in the classification, we compute the associated net of 2xm matrices. The collineation variety is determined based on Lemma 4.1.
 </p>
-Download the file <a href="nets_C3C2Cm.m2">here</a>.
+Download the file <a href="nets_C2Cm.m2">here</a>.
 
-<h2>The collineation variety in C3xC3xC3: smooth cases</h2>
+<h2>The collineation variety in C3xC3xC3: smooth cuboids</h2>
 <p>
-This script verifies the claims in Thm. 4.3. The 2nd collineation variety of a tensor in C3xC3xC3 with associated smooth cubic curve is the Veronese surface.
+This script verifies the claims in Thm. 4.4. The 2nd collineation variety of a tensor in C3xC3xC3 with associated smooth cubic curve is the Veronese surface.
 The code computes a set of generators of the ideal of 2x2 minors, and verifies that if their span is of dimension smaller than 6, then the associated elliptic curve is singular
 </p>
 Download the file <a href="generic_C3C3C3.m2">here</a>.
+
+<h2>The collineation variety in C3xC3xC3: singular cuboids</h2>
+<p>
+  This script verifies the claims in Thm. 4.5. We study the 2nd collineation variety of tensors in C3xC3xC3 with associated singular cubic curve.
+  We follow the classification of Di Trani, de Graaf, Marrani <em>Classification of real and complex three-qutrit states</em>, <a href="https://doi.org/10.1063/5.0156805">here</a>.
+  For every orbit, we compute a set of generators of the ideal of 2x2 minors of the corresponding net and determine the collineation variety is determined based on Lemma 4.1.
+</p>
+Download the files for the <a href="DdGM_semistable.m2">semistable cases</a>, and for the <a href="DdGM_unstable.m2">unstable cases</a>.
 
 
 </body></html>
