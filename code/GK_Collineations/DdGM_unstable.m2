@@ -55,7 +55,7 @@ T_15= a_0*b_0*c_2 + a_0*b_2*c_0 + a_1*b_1*c_1 +
      a_2*b_0*c_0
      
 T_16= a_0*b_0*c_2 + a_0*b_1*c_1 + a_0*b_2*c_0 + 
-     a_1*b_0*c_1 + a_1*b_0*c_1 + a_1*b_0*c_1  
+     a_1*b_0*c_1 + a_1*b_1*c_0 + a_2*b_0*c_0  
 
 T_17= a_0*b_0*c_2 + a_0*b_2*c_0 + a_1*b_0*c_1 +
     a_2*b_1*c_0
@@ -82,3 +82,5 @@ for j from 1 to 20 list (
 -- the codimension of the base locus
 -- if the codimension of the base locus is 2, it records its degree and the degree of its radical
 netList oo
+
+
