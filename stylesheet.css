@@ -71,6 +71,13 @@ a:hover {
     flex-wrap: wrap;
 }
 
+.narrow {
+  width: 600px;
+  position: absolute;
+  left: 20%;
+  top: 30%;
+}
+
 /* Sidebar column*/
 .side {
     -ms-flex: 30%; /* IE10 */
