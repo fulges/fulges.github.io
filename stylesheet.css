@@ -71,6 +71,12 @@ a:hover {
     flex-wrap: wrap;
 }
 
+.indented {
+    top: -1.5em;
+    padding-left: 30pt;
+    padding-right: 50pt;
+  }
+
 .narrow {
   width: 600px;
   position: absolute;
