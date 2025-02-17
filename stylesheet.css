@@ -113,12 +113,13 @@ a {
 	color: #1f8bff;
 }
 
-/* General links hover*/
-
 a:hover {
     text-decoration: underline;
 }
 
+.blacklink {
+    color: black;
+}
 /* Footer */
 .footer {
     padding: 20px;
