@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Degeneration graph for tensors</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- MathJax config (must be before script load) -->
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    macros: {
+      eps: "{\\epsilon}",
+      bfb: "{\\mathbf{b}}",
+      bfu: "{\\mathbf{u}}",
+      bfw: "{\\mathbf{w}}",
+      bbC: "{\\mathbb{C}}",
+    }
+  },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <script id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    .graph-container {
+      position: relative;
+    }
+    #labelContainer {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none; /* clicks pass through */
+    }
+    .node-label {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      font-weight: bold;
+      text-align: center;
+    }
+    canvas {
+      cursor: pointer;
+      touch-action: none;
+    }
+    .modal {
+      transition: opacity 0.25s ease;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+
+  <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-4xl text-center">
+    <h1 class="text-2xl font-bold text-gray-800 mb-2">Degeneration graph in $\bbC^2 \otimes \bbC^2 \otimes \bbC^2$</h1>
+    <p class="text-gray-500 mb-4">Click on a node to see the tensor or an edge to see the degeneration.</p>
+
+    <!-- Graph + labels -->
+    <div class="graph-container">
+      <canvas id="graphCanvas" class="w-full h-96 bg-gray-50 rounded-lg border border-gray-200"></canvas>
+      <div id="labelContainer"></div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div id="infoModal" class="modal fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center hidden opacity-0">
+    <div class="bg-white rounded-lg shadow-2xl p-6 w-full max-w-md mx-4">
+      <div class="flex justify-between items-center mb-4">
+        <h2 id="modalTitle" class="text-xl font-semibold text-gray-800">Tensors in $\bbC^2 \otimes \bbC^2 \otimes \bbC^2$</h2>
+        <button id="closeModal" class="text-gray-400 hover:text-gray-700">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <p id="modalDescription" class="text-gray-600 mb-4"></p>
+      <div id="infoContent" class="w-full min-h-[8rem] p-3 border border-gray-200 rounded-md bg-gray-50 overflow-y-auto"></div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const canvas = document.getElementById('graphCanvas');
+      const ctx = canvas.getContext('2d');
+      const labelContainer = document.getElementById('labelContainer');
+
+      const modal = document.getElementById('infoModal');
+      const modalDescription = document.getElementById('modalDescription');
+      const infoContent = document.getElementById('infoContent');
+      const closeModalButton = document.getElementById('closeModal');
+      document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closeModal();
+  }
+});
+ 
+      // Set canvas size
+      function resizeCanvas() {
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+      }
+      resizeCanvas();
+
+      // Graph data
+      const nodes = [
+        { id: 1, 
+            name: '$\\mathbf{u}_2$', 
+            x: canvas.width * 0.5, 
+            y: canvas.height * 0.1, 
+            radius: 25, 
+            info: 
+            `The unit tensor of rank $2$: 
+            \\[
+            \\bfu_2 =  e_1 \\otimes e_1 \\otimes e_1 + e_2 \\otimes e_2 \\otimes e_2 
+            \\]`},
+        { id: 2, 
+            name: '$\\mathbf{w}$', 
+            x: canvas.width * 0.5, 
+            y: canvas.height * 0.4, 
+            radius: 25, 
+            info: 
+            `The w-tensor: 
+            \\[
+            \\mathbf{w} = e_1 \\otimes e_1 \\otimes e_2 + e_1 \\otimes e_2 \\otimes e_1 + e_1 \\otimes e_1 \\otimes e_2  
+            \\]` },
+        { id: 3, 
+            name: '$\\mathbf{b}_1$', 
+            x: canvas.width * 0.2, 
+            y: canvas.height * 0.7, 
+            radius: 25, 
+            info: 
+            `Non-concise on first factor: 
+            \\[
+            \\mathbf{b}_1 = e_1 \\otimes e_1 \\otimes e_1 + e_1 \\otimes e_2 \\otimes e_2
+            \\]` },
+        { id: 4, 
+            name: '$\\mathbf{b}_2$', 
+            x: canvas.width * 0.5, 
+            y: canvas.height * 0.7, 
+            radius: 25, 
+            info: 
+            `Non-concise on second factor: 
+            \\[
+            \\mathbf{b}_2 = e_1 \\otimes e_1 \\otimes e_1 + e_2 \\otimes e_1 \\otimes e_2
+            \\]` },
+        { id: 5, 
+            name: '$\\mathbf{b}_3$', 
+            x: canvas.width * 0.8, 
+            y: canvas.height * 0.7, 
+            radius: 25, 
+            info: `Non-concise on third factor: 
+            \\[
+            \\mathbf{b}_3 = e_1 \\otimes e_1 \\otimes e_1 + e_2 \\otimes e_2 \\otimes e_1 
+            \\]` },
+        { id: 6, 
+            name: '$\\mathbf{u}_1$', 
+            x: canvas.width * 0.5, 
+            y: canvas.height * 0.9, 
+            radius: 25, 
+            info: 
+            `The rank one tensor: 
+            \\[
+            \\mathbf{u}_1 = e_1 \\otimes e_1 \\otimes e_1
+            \\]`},
+      ];
+
+      const edges = [
+        { from: 1, to: 2, 
+            info: 
+            `Degeneration defined by: 
+            \\[
+            \\begin{array}{rlll}
+            g_\\eps : & e_1 &\\mapsto & -e_1 \\\\
+                      & e_2 &\\mapsto & e_1 + \\eps \\cdot e_2 
+            \\end{array} 
+            \\]
+            on all factors.` },
+        { from: 2, to: 3, 
+            info: 
+            `Restriction defined by: 
+            \\[
+            \\begin{aligned}
+            \\begin{array}{rlll}
+            g^{(1)} : & e_1 &\\mapsto & e_1 \\\\
+                      & e_2 &\\mapsto & 0 
+            \\end{array} 
+            \\\\
+            \\\\
+            \\begin{array}{rlll}
+            g^{(2)} : & e_1 &\\mapsto & e_1 \\\\
+                      & e_2 &\\mapsto & e_2 
+            \\end{array} 
+            \\\\
+            \\\\
+            \\begin{array}{rlll}
+            g^{(3)} : & e_1 &\\mapsto & e_2 \\\\
+                      & e_2 &\\mapsto & e_1
+            \\end{array} 
+            \\end{aligned}
+            \\]`
+         },
+        { from: 2, to: 4, 
+            info: 
+            `Restriction defined by: 
+            \\[
+            \\begin{aligned}
+            \\begin{array}{rlll}
+            g^{(1)} : & e_1 &\\mapsto & e_1 \\\\
+                      & e_2 &\\mapsto & e_2 
+            \\end{array} 
+            \\\\
+            \\\\
+            \\begin{array}{rlll}
+            g^{(2)} : & e_1 &\\mapsto & e_1 \\\\
+                      & e_2 &\\mapsto & 0 
+            \\end{array} 
+            \\\\
+            \\\\
+            \\begin{array}{rlll}
+            g^{(3)} : & e_1 &\\mapsto & e_2 \\\\
+                      & e_2 &\\mapsto & e_1
+            \\end{array} 
+            \\end{aligned}
+            \\]`
+         },
+        { from: 2, to: 5, 
+            info: 
+            `Restriction defined by: 
+            \\[
+            \\begin{aligned}
+            \\begin{array}{rlll}
+            g^{(1)} : & e_1 &\\mapsto & e_1 \\\\
+                      & e_2 &\\mapsto & e_2 
+            \\end{array} 
+            \\\\
+            \\\\
+            \\begin{array}{rlll}
+            g^{(2)} : & e_1 &\\mapsto & e_2 \\\\
+                      & e_2 &\\mapsto & e_1
+            \\end{array} 
+            \\\\
+            \\\\
+            \\begin{array}{rlll}
+            g^{(3)} : & e_1 &\\mapsto & e_1 \\\\
+                      & e_2 &\\mapsto & 0 
+            \\end{array} 
+            \\end{aligned}
+            \\]`
+         },
+        { from: 3, to: 6, 
+            info: 
+            `Restriction defined by: 
+            \\[
+            \\begin{array}{rlll}
+            g : & e_1 &\\mapsto & e_1 \\\\
+                & e_2 &\\mapsto & 0 
+            \\end{array} 
+            \\]
+            on all factors.`},
+        { from: 4, to: 6, 
+            info: 
+            `Restriction defined by: 
+            \\[
+            \\begin{array}{rlll}
+            g : & e_1 &\\mapsto & e_1 \\\\
+                & e_2 &\\mapsto & 0 
+            \\end{array} 
+            \\]
+            on all factors.`},
+        { from: 5, to: 6, 
+            info: 
+            `Restriction defined by: 
+            \\[
+            \\begin{array}{rlll}
+            g : & e_1 &\\mapsto & e_1 \\\\
+                & e_2 &\\mapsto & 0 
+            \\end{array} 
+            \\]
+            on all factors.`},
+      ];
+
+      // Drawing
+      function drawScene() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawEdges();
+        drawNodes();
+        drawLabels();
+      }
+
+      function drawEdges() {
+        edges.forEach(edge => {
+          const fromNode = nodes.find(n => n.id === edge.from);
+          const toNode = nodes.find(n => n.id === edge.to);
+          if (!fromNode || !toNode) return;
+          ctx.beginPath();
+          ctx.moveTo(fromNode.x, fromNode.y);
+          ctx.lineTo(toNode.x, toNode.y);
+          ctx.strokeStyle = edge.info ? '#3B82F6' : '#9CA3AF';
+          ctx.lineWidth = 3;
+          ctx.stroke();
+        });
+      }
+
+      function drawNodes() {
+        nodes.forEach(node => {
+          ctx.beginPath();
+          ctx.arc(node.x, node.y, node.radius, 0, 2 * Math.PI);
+          ctx.fillStyle = node.info ? '#3B82F6' : '#ffffff';
+          ctx.fill();
+          ctx.strokeStyle = '#4B5563';
+          ctx.lineWidth = 3;
+          ctx.stroke();
+        });
+      }
+
+      function drawLabels() {
+        labelContainer.innerHTML = '';
+        nodes.forEach(node => {
+          const label = document.createElement('div');
+          label.className = 'node-label';
+          label.style.left = `${node.x}px`;
+          label.style.top = `${node.y}px`;
+          label.style.color = node.info ? 'white' : '#1F2937';
+          label.innerHTML = node.name || node.id;
+          labelContainer.appendChild(label);
+          if (window.MathJax) MathJax.typesetPromise([label]);
+        });
+      }
+
+      // Modal handling
+    function openModal(element, type) {
+    if (type === 'Node') {
+        modalDescription.innerHTML = ``;
+    } else {
+        const fromNode = nodes.find(n => n.id === element.from);
+        const toNode = nodes.find(n => n.id === element.to);
+        modalDescription.innerHTML = `${fromNode.name || element.from} → ${toNode.name || element.to}`;
+    }
+
+    infoContent.innerHTML = element.info || '<p class="text-gray-500">No information available.</p>';
+
+    if (window.MathJax) {
+        MathJax.typesetPromise([modalDescription, infoContent]);
+    }
+
+    modal.classList.remove('hidden');
+    setTimeout(() => modal.classList.remove('opacity-0'), 10);
+    }
+
+    function closeModal() {
+        modal.classList.add('opacity-0');
+        setTimeout(() => modal.classList.add('hidden'), 250);
+      }
+
+      // Events
+      closeModalButton.addEventListener('click', closeModal);
+      modal.addEventListener('click', e => e.target === modal && closeModal());
+
+      canvas.addEventListener('click', e => {
+        const pos = { x: e.offsetX, y: e.offsetY };
+
+        // check node
+        for (const node of [...nodes].reverse()) {
+          const dist = Math.hypot(pos.x - node.x, pos.y - node.y);
+          if (dist < node.radius) {
+            openModal(node, 'Node');
+            return;
+          }
+        }
+
+        // check edge
+        const tolerance = 6;
+        for (const edge of edges) {
+          const n1 = nodes.find(n => n.id === edge.from);
+          const n2 = nodes.find(n => n.id === edge.to);
+          if (!n1 || !n2) continue;
+          const lenSq = (n2.x - n1.x) ** 2 + (n2.y - n1.y) ** 2;
+          let t = ((pos.x - n1.x) * (n2.x - n1.x) + (pos.y - n1.y) * (n2.y - n1.y)) / lenSq;
+          t = Math.max(0, Math.min(1, t));
+          const closestX = n1.x + t * (n2.x - n1.x);
+          const closestY = n1.y + t * (n2.y - n1.y);
+          const dist = Math.hypot(pos.x - closestX, pos.y - closestY);
+          if (dist < tolerance) {
+            openModal(edge, 'Edge');
+            return;
+          }
+        }
+      });
+
+      window.addEventListener('resize', () => {
+        const oldWidth = canvas.width;
+        const oldHeight = canvas.height;
+        resizeCanvas();
+        nodes.forEach(n => {
+          n.x = (n.x / oldWidth) * canvas.width;
+          n.y = (n.y / oldHeight) * canvas.height;
+        });
+        drawScene();
+      });
+
+      drawScene();
+    });
+  </script>
+</body>
+</html>
