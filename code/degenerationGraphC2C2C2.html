@@ -28,9 +28,6 @@ window.MathJax = {
 <script id="MathJax-script" async
   src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
-  <script id="MathJax-script" async
-    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -103,12 +100,13 @@ window.MathJax = {
       const modalDescription = document.getElementById('modalDescription');
       const infoContent = document.getElementById('infoContent');
       const closeModalButton = document.getElementById('closeModal');
+
       document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    closeModal();
-  }
-});
- 
+        if (e.key === 'Escape') {
+          closeModal();
+        }
+      });
+
       // Set canvas size
       function resizeCanvas() {
         const rect = canvas.getBoundingClientRect();
@@ -117,6 +115,7 @@ window.MathJax = {
       }
       resizeCanvas();
 
+      // Graph data
       // Graph data
       const nodes = [
         { id: 1, 
@@ -329,6 +328,7 @@ window.MathJax = {
         });
       }
 
+      // ← FIXED FUNCTION
       function drawLabels() {
         labelContainer.innerHTML = '';
         nodes.forEach(node => {
@@ -339,31 +339,36 @@ window.MathJax = {
           label.style.color = node.info ? 'white' : '#1F2937';
           label.innerHTML = node.name || node.id;
           labelContainer.appendChild(label);
-          if (window.MathJax) MathJax.typesetPromise([label]);
         });
+
+        // Only one typeset call for all labels
+        if (window.MathJax) {
+          MathJax.typesetPromise([labelContainer, infoContent, modalDescription])
+            .catch(err => console.log('MathJax error:', err));
+        }
       }
 
       // Modal handling
-    function openModal(element, type) {
-    if (type === 'Node') {
-        modalDescription.innerHTML = ``;
-    } else {
-        const fromNode = nodes.find(n => n.id === element.from);
-        const toNode = nodes.find(n => n.id === element.to);
-        modalDescription.innerHTML = `${fromNode.name || element.from} → ${toNode.name || element.to}`;
-    }
+      function openModal(element, type) {
+        if (type === 'Node') {
+            modalDescription.innerHTML = ``;
+        } else {
+            const fromNode = nodes.find(n => n.id === element.from);
+            const toNode = nodes.find(n => n.id === element.to);
+            modalDescription.innerHTML = `${fromNode.name || element.from} → ${toNode.name || element.to}`;
+        }
 
-    infoContent.innerHTML = element.info || '<p class="text-gray-500">No information available.</p>';
+        infoContent.innerHTML = element.info || '<p class="text-gray-500">No information available.</p>';
 
-    if (window.MathJax) {
-        MathJax.typesetPromise([modalDescription, infoContent]);
-    }
+        if (window.MathJax) {
+            MathJax.typesetPromise([modalDescription, infoContent]);
+        }
 
-    modal.classList.remove('hidden');
-    setTimeout(() => modal.classList.remove('opacity-0'), 10);
-    }
+        modal.classList.remove('hidden');
+        setTimeout(() => modal.classList.remove('opacity-0'), 10);
+      }
 
-    function closeModal() {
+      function closeModal() {
         modal.classList.add('opacity-0');
         setTimeout(() => modal.classList.add('hidden'), 250);
       }
@@ -411,10 +416,18 @@ window.MathJax = {
           n.x = (n.x / oldWidth) * canvas.width;
           n.y = (n.y / oldHeight) * canvas.height;
         });
-        drawScene();
+        if (window.MathJax && MathJax.startup?.promise) {
+            MathJax.startup.promise.then(() => drawScene());
+        } else {
+            drawScene();
+        }
       });
 
-      drawScene();
+      if (window.MathJax && MathJax.startup?.promise) {
+          MathJax.startup.promise.then(() => drawScene());
+      } else {
+          drawScene();
+      }
     });
   </script>
 </body>
