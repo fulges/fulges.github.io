@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Degeneration Graph for \(2 \times 2 \times 2\) tensors</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- MathJax config (must be before script load) -->
+  <script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']],
+      macros: {"End": "{\\mathrm{End}}", "GL": "{\\mathrm{GL}}", "Hom": "{\\mathrm{Hom}}", "SL": "{\\mathrm{SL}}", "SO": "{\\mathrm{SO}}", "Sp": "{\\mathrm{Sp}}", "Sym": "{\\mathrm{Sym}}", "bfa": "{\\mathbf{a}}", "bfb": "{\\mathbf{b}}", "bfc": "{\\mathbf{c}}", "bfd": "{\\mathbf{d}}", "bfe": "{\\mathbf{e}}", "bff": "{\\mathbf{f}}", "bfg": "{\\mathbf{g}}", "bfh": "{\\mathbf{h}}", "bfi": "{\\mathbf{i}}", "bfj": "{\\mathbf{j}}", "bfk": "{\\mathbf{k}}", "bfl": "{\\mathbf{l}}", "bfm": "{\\mathbf{m}}", "bfn": "{\\mathbf{n}}", "bfo": "{\\mathbf{o}}", "bfp": "{\\mathbf{p}}", "bfq": "{\\mathbf{q}}", "bfr": "{\\mathbf{r}}", "bfs": "{\\mathbf{s}}", "bft": "{\\mathbf{t}}", "bfu": "{\\mathbf{u}}", "bfv": "{\\mathbf{v}}", "bfw": "{\\mathbf{w}}", "bfx": "{\\mathbf{x}}", "bfy": "{\\mathbf{y}}", "bfz": "{\\mathbf{z}}", "id": "{\\mathrm{id}}", "rk": "{\\mathrm{rk}}"}
+    },
+    svg: { fontCache: 'global' }
+  };
+  </script>
+  <script id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .graph-container { position: relative; overflow: hidden; flex: 1; min-width: 0; }
+    #labelContainer {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none; overflow: hidden;
+    }
+    .node-label {
+      position: absolute; transform: translate(-50%, -50%);
+      font-weight: bold; text-align: center; white-space: nowrap;
+    }
+    canvas { cursor: grab; touch-action: none; }
+    canvas:active { cursor: grabbing; }
+    #sidePanel {
+      transition: none;
+      width: 380px; opacity: 1; overflow-y: auto;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+
+  <div class="bg-white shadow-lg flex flex-col flex-1 overflow-hidden">
+    <div class="p-4 text-center border-b border-gray-200">
+      <h1 class="text-2xl font-bold text-gray-800 mb-1">Degeneration Graph for \(2 \times 2 \times 2\) tensors</h1>
+      <p class="text-gray-500 text-sm">Click-and-drag to pan. Scroll to zoom. Click a node to see its info, or click two nodes to see the path / obstruction between them.</p>
+    </div>
+
+    <div class="flex flex-1 overflow-hidden">
+      <!-- Graph area -->
+      <div class="graph-container rounded-lg border border-gray-200 m-2">
+        <canvas id="graphCanvas" class="w-full h-full bg-gray-50 block"></canvas>
+        <div id="labelContainer"></div>
+        <!-- Zoom controls -->
+        <div class="absolute bottom-4 right-4 flex flex-col space-y-2">
+          <button id="zoomInBtn"  class="w-10 h-10 bg-white border rounded-md shadow-md flex items-center justify-center text-gray-600 hover:bg-gray-100 transition">+</button>
+          <button id="zoomOutBtn" class="w-10 h-10 bg-white border rounded-md shadow-md flex items-center justify-center text-gray-600 hover:bg-gray-100 transition">-</button>
+          <button id="resetViewBtn" class="w-10 h-10 bg-white border rounded-md shadow-md flex items-center justify-center text-gray-600 hover:bg-gray-100 transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4 4v5h5M20 20v-5h-5M4 20h5v-5M20 4h-5v5"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Side panel -->
+      <div id="sidePanel" class="bg-white border-l border-gray-200 flex-shrink-0 flex flex-col open">
+        <div class="flex justify-between items-center p-4 border-b border-gray-200">
+          <h2 id="panelTitle" class="text-lg font-semibold text-gray-800 truncate">Info</h2>
+          <button id="closePanel" class="text-gray-400 hover:text-gray-700 flex-shrink-0 ml-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                 viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+        <p id="panelDescription" class="text-gray-600 px-4 pt-3 pb-1 text-sm"></p>
+        <div id="panelContent"
+             class="flex-1 overflow-y-auto px-4 pb-4 pt-2 text-sm"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // ---- Data injected from the database --------------------------------
+    const nodes = [
+  {
+    "id": 1,
+    "name": "$\\bfu_2$",
+    "sub_name": "The unit tensor of rank 2",
+    "x": 0.0,
+    "y": 0.0,
+    "rx": 25.0,
+    "ry": 25.0,
+    "radius": 25.0,
+    "parameters": 0,
+    "specialization_of": null,
+    "info": "<p>The unit tensor of rank 2</p>\n<p>$ e_0 \\otimes e_0 \\otimes e_0 + e_1\\otimes e_1 \\otimes e_1$</p>\n<p>Dimension of orbit closure: 8</p>"
+  },
+  {
+    "id": 2,
+    "name": "$\\bfw$",
+    "sub_name": "The W tensor",
+    "x": 0.0,
+    "y": 200.0,
+    "rx": 25.0,
+    "ry": 25.0,
+    "radius": 25.0,
+    "parameters": 0,
+    "specialization_of": null,
+    "info": "<p>The W tensor</p>\n<p>$e_1 \\otimes e_1 \\otimes e_0 + e_1 \\otimes e_0 \\otimes e_1 + e_0 \\otimes e_1 \\otimes e_1 $</p>\n<p>Dimension of orbit closure: 7</p>"
+  },
+  {
+    "id": 3,
+    "name": "$\\bfb_1$",
+    "sub_name": "An identity matrix on the second and third factor",
+    "x": -150.0,
+    "y": 400.0,
+    "rx": 25.0,
+    "ry": 25.0,
+    "radius": 25.0,
+    "parameters": 0,
+    "specialization_of": null,
+    "info": "<p>An identity matrix on the second and third factor</p>\n<p>$ e_0 \\otimes e_0 \\otimes e_0 + e_0\\otimes e_1 \\otimes e_1$</p>\n<p>Dimension of orbit closure: 5</p>"
+  },
+  {
+    "id": 4,
+    "name": "$\\bfb_2$",
+    "sub_name": "An identity matrix on the first and third factor",
+    "x": 0.0,
+    "y": 400.0,
+    "rx": 25.0,
+    "ry": 25.0,
+    "radius": 25.0,
+    "parameters": 0,
+    "specialization_of": null,
+    "info": "<p>An identity matrix on the first and third factor</p>\n<p>$ e_0 \\otimes e_0 \\otimes e_0 + e_1\\otimes e_0 \\otimes e_1$</p>\n<p>Dimension of orbit closure: 5</p>"
+  },
+  {
+    "id": 5,
+    "name": "$\\bfb_3$",
+    "sub_name": "An identity matrix on the first and second factor",
+    "x": 150.0,
+    "y": 400.0,
+    "rx": 25.0,
+    "ry": 25.0,
+    "radius": 25.0,
+    "parameters": 0,
+    "specialization_of": null,
+    "info": "<p>An identity matrix on the first and second factor</p>\n<p>$ e_0 \\otimes e_0 \\otimes e_0 + e_1\\otimes e_1 \\otimes e_0$</p>\n<p>Dimension of orbit closure: 5</p>"
+  },
+  {
+    "id": 6,
+    "name": "$\\bfu_1$",
+    "sub_name": "The unit tensor of rank 1",
+    "x": 0.0,
+    "y": 600.0,
+    "rx": 25.0,
+    "ry": 25.0,
+    "radius": 25.0,
+    "parameters": 0,
+    "specialization_of": null,
+    "info": "<p>The unit tensor of rank 1</p>\n<p>$ e_0 \\otimes e_0 \\otimes e_0$</p>\n<p>Dimension of orbit closure: 4</p>"
+  }
+];
+    const edges = [
+  {
+    "from": 1,
+    "to": 2,
+    "info": "Degeneration:",
+    "style": "solid"
+  },
+  {
+    "from": 2,
+    "to": 3,
+    "info": "Restriction",
+    "style": "solid"
+  },
+  {
+    "from": 2,
+    "to": 4,
+    "info": "Restriction",
+    "style": "solid"
+  },
+  {
+    "from": 2,
+    "to": 5,
+    "info": "Restriction",
+    "style": "solid"
+  },
+  {
+    "from": 3,
+    "to": 6,
+    "info": "Restriction",
+    "style": "solid"
+  },
+  {
+    "from": 4,
+    "to": 6,
+    "info": "Restriction",
+    "style": "solid"
+  },
+  {
+    "from": 5,
+    "to": 6,
+    "info": "Restriction",
+    "style": "solid"
+  }
+];
+    const obstructions = [
+  {
+    "from": 2,
+    "to": 1,
+    "info": "TODO"
+  },
+  {
+    "from": 3,
+    "to": 4,
+    "info": "TODO"
+  },
+  {
+    "from": 3,
+    "to": 5,
+    "info": "TODO"
+  },
+  {
+    "from": 4,
+    "to": 3,
+    "info": "TODO"
+  },
+  {
+    "from": 4,
+    "to": 5,
+    "info": "TODO"
+  },
+  {
+    "from": 5,
+    "to": 3,
+    "info": "TODO"
+  },
+  {
+    "from": 5,
+    "to": 4,
+    "info": "TODO"
+  }
+];
+    const pairs = [
+  {
+    "from": 1,
+    "to": 2,
+    "relation": "degeneration",
+    "info": "",
+    "path": [
+      1,
+      2
+    ]
+  },
+  {
+    "from": 1,
+    "to": 3,
+    "relation": "degeneration",
+    "info": "",
+    "path": [
+      1,
+      2,
+      3
+    ]
+  },
+  {
+    "from": 1,
+    "to": 4,
+    "relation": "degeneration",
+    "info": "",
+    "path": [
+      1,
+      2,
+      4
+    ]
+  },
+  {
+    "from": 1,
+    "to": 5,
+    "relation": "degeneration",
+    "info": "",
+    "path": [
+      1,
+      2,
+      5
+    ]
+  },
+  {
+    "from": 1,
+    "to": 6,
+    "relation": "degeneration",
+    "info": "",
+    "path": [
+      1,
+      2,
+      3,
+      6
+    ]
+  },
+  {
+    "from": 2,
+    "to": 1,
+    "relation": "obstruction",
+    "info": "TODO",
+    "path": []
+  },
+  {
+    "from": 2,
+    "to": 3,
+    "relation": "degeneration",
+    "info": "",
+    "path": [
+      2,
+      3
+    ]
+  },
+  {
+    "from": 2,
+    "to": 4,
+    "relation": "degeneration",
+    "info": "",
+    "path": [
+      2,
+      4
+    ]
+  },
+  {
+    "from": 2,
+    "to": 5,
+    "relation": "degeneration",
+    "info": "",
+    "path": [
+      2,
+      5
+    ]
+  },
+  {
+    "from": 2,
+    "to": 6,
+    "relation": "degeneration",
+    "info": "",
+    "path": [
+      2,
+      3,
+      6
+    ]
+  },
+  {
+    "from": 3,
+    "to": 4,
+    "relation": "obstruction",
+    "info": "TODO",
+    "path": []
+  },
+  {
+    "from": 3,
+    "to": 5,
+    "relation": "obstruction",
+    "info": "TODO",
+    "path": []
+  },
+  {
+    "from": 3,
+    "to": 6,
+    "relation": "degeneration",
+    "info": "",
+    "path": [
+      3,
+      6
+    ]
+  },
+  {
+    "from": 4,
+    "to": 3,
+    "relation": "obstruction",
+    "info": "TODO",
+    "path": []
+  },
+  {
+    "from": 4,
+    "to": 5,
+    "relation": "obstruction",
+    "info": "TODO",
+    "path": []
+  },
+  {
+    "from": 4,
+    "to": 6,
+    "relation": "degeneration",
+    "info": "",
+    "path": [
+      4,
+      6
+    ]
+  },
+  {
+    "from": 5,
+    "to": 3,
+    "relation": "obstruction",
+    "info": "TODO",
+    "path": []
+  },
+  {
+    "from": 5,
+    "to": 4,
+    "relation": "obstruction",
+    "info": "TODO",
+    "path": []
+  },
+  {
+    "from": 5,
+    "to": 6,
+    "relation": "degeneration",
+    "info": "",
+    "path": [
+      5,
+      6
+    ]
+  }
+];
+    const bubbles = [];
+
+    // Build lookup maps
+    const nodeById  = Object.fromEntries(nodes.map(n => [n.id, n]));
+    const edgeByKey = {};
+    edges.forEach(e => { edgeByKey[e.from + ',' + e.to] = e; });
+    const pairByKey = {};
+    pairs.forEach(p => { pairByKey[p.from + ',' + p.to] = p; });
+
+    // ---- Canvas setup ----------------------------------------------------
+    const canvas  = document.getElementById('graphCanvas');
+    const ctx     = canvas.getContext('2d');
+    const labelContainer = document.getElementById('labelContainer');
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width  = rect.width;
+      canvas.height = rect.height;
+    }
+    resizeCanvas();
+
+    // ---- Viewport --------------------------------------------------------
+    const view = { x: 0, y: 0, scale: 0.5, minScale: 0.05, maxScale: 6 };
+    const initialView = { ...view };
+
+    function toScreen(wx, wy) {
+      return { x: wx * view.scale + view.x, y: wy * view.scale + view.y };
+    }
+    function toWorld(sx, sy) {
+      return { x: (sx - view.x) / view.scale, y: (sy - view.y) / view.scale };
+    }
+
+    function fitAndCenterGraph() {
+      if (nodes.length === 0) return;
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      nodes.forEach(n => {
+        minX = Math.min(minX, n.x - n.rx);
+        maxX = Math.max(maxX, n.x + n.rx);
+        minY = Math.min(minY, n.y - n.ry);
+        maxY = Math.max(maxY, n.y + n.ry);
+      });
+      // Include bubble regions in the bounding box
+      bubbles.forEach(b => {
+        minX = Math.min(minX, b.x);
+        maxX = Math.max(maxX, b.x + b.width);
+        minY = Math.min(minY, b.y);
+        maxY = Math.max(maxY, b.y + b.height);
+      });
+      const gw = maxX - minX, gh = maxY - minY;
+      const pad = 80;
+      if (gw === 0 || gh === 0) return;
+      const sx = (canvas.width  - pad * 2) / gw;
+      const sy = (canvas.height - pad * 2) / gh;
+      view.scale = Math.max(view.minScale, Math.min(view.maxScale, Math.min(sx, sy)));
+      view.x = (canvas.width  - gw * view.scale) / 2 - minX * view.scale;
+      view.y = (canvas.height - gh * view.scale) / 2 - minY * view.scale;
+      initialView.x = view.x;
+      initialView.y = view.y;
+      initialView.scale = view.scale;
+    }
+
+    // ---- Selection state -------------------------------------------------
+    let selectedNode = null;   // first-clicked node id, or null
+
+    // Active highlighted pair: {nodeIds: Set, edgeKeys: Set, type: 'degeneration'|'obstruction'}
+    let activePair = null;
+
+    function clearSelection() {
+      selectedNode = null;
+      activePair = null;
+      drawScene();
+    }
+
+    // ---- Drawing ---------------------------------------------------------
+
+    // Compute the point on the boundary of an ellipse (rx, ry) centered at
+    // (cx, cy) in the direction toward (tx, ty).
+    function ellipseBoundary(cx, cy, rx, ry, tx, ty) {
+      const dx = tx - cx, dy = ty - cy;
+      const len = Math.hypot(dx, dy);
+      if (len === 0) return { x: cx + rx, y: cy };
+      const ux = dx / len, uy = dy / len;
+      const t = 1 / Math.hypot(ux / rx, uy / ry);
+      return { x: cx + t * ux, y: cy + t * uy };
+    }
+
+    function drawScene() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.save();
+      ctx.translate(view.x, view.y);
+      ctx.scale(view.scale, view.scale);
+      drawCones();
+      drawBubbles();
+      drawEdges();
+      drawNodes();
+      ctx.restore();
+      drawLabels();
+    }
+
+    function drawCones() {
+      bubbles.forEach(b => {
+        if (b.px == null) return;
+        const r = 16;   // corner radius (same as bubble)
+        const bL = b.x, bT = b.y, bR = b.x + b.width, bB = b.y + b.height;
+
+        // Ellipse boundary points toward the top-left and bottom-left of bubble
+        const p1 = ellipseBoundary(b.px, b.py, b.prx, b.pry, bL, bT);
+        const p2 = ellipseBoundary(b.px, b.py, b.prx, b.pry, bL, bB);
+        // Parametric angles on the parent ellipse
+        const a1 = Math.atan2((p1.y - b.py) / b.pry, (p1.x - b.px) / b.prx);
+        const a2 = Math.atan2((p2.y - b.py) / b.pry, (p2.x - b.px) / b.prx);
+
+        ctx.save();
+        ctx.beginPath();
+        // 1. Arc on parent ellipse (top-right to bottom-right of ellipse face)
+        ctx.ellipse(b.px, b.py, b.prx, b.pry, 0, a1, a2, false);
+        // 2. Straight line down to bottom-left of bubble (with room for rounded corner)
+        ctx.lineTo(bL, bB - r);
+        // 3. Rounded rect around the bubble (clockwise: BL corner → bottom → BR → right → TR → top → TL)
+        ctx.arcTo(bL, bB, bL + r, bB, r);
+        ctx.lineTo(bR - r, bB);
+        ctx.arcTo(bR, bB, bR, bB - r, r);
+        ctx.lineTo(bR, bT + r);
+        ctx.arcTo(bR, bT, bR - r, bT, r);
+        ctx.lineTo(bL + r, bT);
+        ctx.arcTo(bL, bT, bL, bT + r, r);
+        // 4. Close back up to the ellipse arc start
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(147, 197, 253, 0.35)';
+        ctx.fill();
+        ctx.restore();
+      });
+    }
+
+    function drawBubbles() {
+      // Bubble fill is now part of the unified cone shape — nothing to draw separately
+    }
+
+    function drawEdges() {
+      edges.forEach(edge => {
+        const f = nodeById[edge.from], t = nodeById[edge.to];
+        if (!f || !t) return;
+
+        const s = ellipseBoundary(f.x, f.y, f.rx, f.ry, t.x, t.y);
+        const e2 = ellipseBoundary(t.x, t.y, t.rx, t.ry, f.x, f.y);
+
+        const highlighted = activePair && activePair.edgeKeys.has(edge.from + ',' + edge.to);
+        const isDashed = edge.style === 'dashed';
+        const color = highlighted ? '#10B981' : '#3B82F6';   // emerald vs blue
+        const lw = highlighted ? 5 : 3;
+
+        ctx.save();
+        if (isDashed) ctx.setLineDash([12 / view.scale, 8 / view.scale]);
+        ctx.beginPath();
+        ctx.moveTo(s.x, s.y);
+        ctx.lineTo(e2.x, e2.y);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = lw / view.scale;
+        ctx.stroke();
+        ctx.restore();
+
+        // Arrowhead (always solid)
+        const headLen = (highlighted ? 18 : 14) / view.scale;
+        const angle = Math.atan2(e2.y - s.y, e2.x - s.x);
+        ctx.beginPath();
+        ctx.moveTo(e2.x, e2.y);
+        ctx.lineTo(e2.x - headLen * Math.cos(angle - 0.4), e2.y - headLen * Math.sin(angle - 0.4));
+        ctx.lineTo(e2.x - headLen * Math.cos(angle + 0.4), e2.y - headLen * Math.sin(angle + 0.4));
+        ctx.closePath();
+        ctx.fillStyle = color;
+        ctx.fill();
+      });
+    }
+
+    function drawObstructions() {
+      obstructions.forEach(obs => {
+        const f = nodeById[obs.from], t = nodeById[obs.to];
+        if (!f || !t) return;
+
+        const dx = t.x - f.x, dy = t.y - f.y;
+        const len = Math.hypot(dx, dy);
+        if (len === 0) return;
+        const ux = dx / len, uy = dy / len;
+        const sx = f.x + ux * f.radius, sy = f.y + uy * f.radius;
+        const ex = t.x - ux * t.radius, ey = t.y - uy * t.radius;
+
+        const highlighted = activePair && activePair.type === 'obstruction'
+          && activePair.edgeKeys.has(obs.from + ',' + obs.to);
+        const color = highlighted ? '#DC2626' : '#EF4444';  // brighter red when active
+        const lw = highlighted ? 4 : 2;
+
+        ctx.save();
+        ctx.setLineDash([10 / view.scale, 8 / view.scale]);
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(ex, ey);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = lw / view.scale;
+        ctx.stroke();
+        ctx.restore();
+
+        // X mark near midpoint
+        const mx = (sx + ex) / 2, my = (sy + ey) / 2;
+        const cs = (highlighted ? 11 : 8) / view.scale;
+        ctx.beginPath();
+        ctx.moveTo(mx - cs, my - cs); ctx.lineTo(mx + cs, my + cs);
+        ctx.moveTo(mx + cs, my - cs); ctx.lineTo(mx - cs, my + cs);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = (highlighted ? 3.5 : 2.5) / view.scale;
+        ctx.stroke();
+      });
+    }
+
+    function drawNodes() {
+      nodes.forEach(node => {
+        const isSelected = (node.id === selectedNode);
+        const inPath = activePair && activePair.nodeIds.has(node.id);
+        let fill, stroke, lw;
+        if (inPath && activePair.type === 'degeneration') {
+          fill = '#10B981'; stroke = '#065F46'; lw = 4;      // emerald
+        } else if (inPath && activePair.type === 'obstruction') {
+          fill = '#EF4444'; stroke = '#991B1B'; lw = 4;      // red
+        } else if (isSelected) {
+          fill = '#F59E0B'; stroke = '#B45309'; lw = 4;      // amber
+        } else {
+          fill = '#3B82F6'; stroke = '#1E3A5F'; lw = 2;      // default blue
+        }
+        ctx.beginPath();
+        ctx.ellipse(node.x, node.y, node.rx, node.ry, 0, 0, 2 * Math.PI);
+        ctx.fillStyle = fill;
+        ctx.fill();
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = lw / view.scale;
+        ctx.stroke();
+      });
+    }
+
+    function drawLabels() {
+      labelContainer.innerHTML = '';
+      nodes.forEach(node => {
+        const sp = toScreen(node.x, node.y);
+        if (sp.x < -100 || sp.x > canvas.width + 100 ||
+            sp.y < -100 || sp.y > canvas.height + 100) return;
+        const lbl = document.createElement('div');
+        lbl.className = 'node-label';
+        lbl.style.left = sp.x + 'px';
+        lbl.style.top  = sp.y + 'px';
+        lbl.style.color = 'white';
+        lbl.style.fontSize = (1 * view.scale) + 'em';
+        lbl.innerHTML = node.name || node.id;
+        labelContainer.appendChild(lbl);
+      });
+      if (window.MathJax) {
+        MathJax.typesetPromise([labelContainer]).catch(e => console.log('MathJax:', e));
+      }
+    }
+
+    // ---- Pan & Zoom ------------------------------------------------------
+    let isPanning = false, didPan = false;
+    let panStart = { x: 0, y: 0 };
+
+    canvas.addEventListener('mousedown', e => {
+      isPanning = true; didPan = false;
+      panStart.x = e.clientX - view.x;
+      panStart.y = e.clientY - view.y;
+    });
+    canvas.addEventListener('mousemove', e => {
+      if (!isPanning) return;
+      didPan = true;
+      view.x = e.clientX - panStart.x;
+      view.y = e.clientY - panStart.y;
+      drawScene();
+    });
+    const stopPan = () => { isPanning = false; };
+    canvas.addEventListener('mouseup',    stopPan);
+    canvas.addEventListener('mouseleave', stopPan);
+
+    canvas.addEventListener('wheel', e => {
+      e.preventDefault();
+      const mouse = toWorld(e.offsetX, e.offsetY);
+      const factor = e.deltaY < 0 ? 1.1 : 0.9;
+      const ns = Math.max(view.minScale, Math.min(view.maxScale, view.scale * factor));
+      view.x = e.offsetX - mouse.x * ns;
+      view.y = e.offsetY - mouse.y * ns;
+      view.scale = ns;
+      drawScene();
+    });
+
+    // ---- Click detection (two-click interaction) -------------------------
+    canvas.addEventListener('click', e => {
+      if (didPan) return;
+      const wp = toWorld(e.offsetX, e.offsetY);
+
+      // Did we click a node?
+      let clickedNode = null;
+      for (const node of [...nodes].reverse()) {
+        const ndx = (wp.x - node.x) / node.rx;
+        const ndy = (wp.y - node.y) / node.ry;
+        if (ndx * ndx + ndy * ndy < 1) {
+          clickedNode = node; break;
+        }
+      }
+
+      if (!clickedNode) {
+        // Clicked empty space → deselect
+        clearSelection();
+        return;
+      }
+
+      if (selectedNode === null) {
+        // First click → select this node, show its info
+        selectedNode = clickedNode.id;
+        activePair = null;
+        drawScene();
+        openNodePanel(clickedNode);
+      } else if (selectedNode === clickedNode.id) {
+        // Clicked same node again → deselect
+        clearSelection();
+      } else {
+        // Second click on a different node → show pair info
+        const srcId = selectedNode;
+        const tgtId = clickedNode.id;
+        selectedNode = null;
+        setActivePair(srcId, tgtId);
+        drawScene();
+        openPairPanel(srcId, tgtId);
+      }
+    });
+
+    // ---- Zoom buttons ----------------------------------------------------
+    document.getElementById('zoomInBtn').addEventListener('click', () => {
+      const c = toWorld(canvas.width / 2, canvas.height / 2);
+      const ns = Math.min(view.maxScale, view.scale * 1.25);
+      view.x = canvas.width / 2  - c.x * ns;
+      view.y = canvas.height / 2 - c.y * ns;
+      view.scale = ns; drawScene();
+    });
+    document.getElementById('zoomOutBtn').addEventListener('click', () => {
+      const c = toWorld(canvas.width / 2, canvas.height / 2);
+      const ns = Math.max(view.minScale, view.scale / 1.25);
+      view.x = canvas.width / 2  - c.x * ns;
+      view.y = canvas.height / 2 - c.y * ns;
+      view.scale = ns; drawScene();
+    });
+    document.getElementById('resetViewBtn').addEventListener('click', () => {
+      view.x = initialView.x; view.y = initialView.y;
+      view.scale = initialView.scale; drawScene();
+    });
+
+    // ---- Pair highlighting ------------------------------------------------
+    function setActivePair(srcId, tgtId) {
+      const pair = pairByKey[srcId + ',' + tgtId];
+      if (!pair) {
+        // Non-minimal obstruction — just highlight the two endpoints
+        activePair = { nodeIds: new Set([srcId, tgtId]), edgeKeys: new Set(), type: 'obstruction' };
+        return;
+      }
+      if (pair.relation === 'degeneration') {
+        const pathIds = pair.path || [];
+        const nodeIds = new Set(pathIds);
+        const edgeKeys = new Set();
+        for (let i = 0; i < pathIds.length - 1; i++) {
+          edgeKeys.add(pathIds[i] + ',' + pathIds[i + 1]);
+        }
+        activePair = { nodeIds, edgeKeys, type: 'degeneration' };
+      } else {
+        activePair = {
+          nodeIds: new Set([srcId, tgtId]),
+          edgeKeys: new Set([srcId + ',' + tgtId]),
+          type: 'obstruction',
+        };
+      }
+    }
+
+    // ---- Side panel -------------------------------------------------------
+    const sidePanel    = document.getElementById('sidePanel');
+    const panelTitle   = document.getElementById('panelTitle');
+    const panelDesc    = document.getElementById('panelDescription');
+    const panelContent = document.getElementById('panelContent');
+    const closeBtn     = document.getElementById('closePanel');
+
+    function openNodePanel(node) {
+      panelTitle.innerHTML = node.name || 'Node ' + node.id;
+      panelDesc.innerHTML = '';
+      panelContent.innerHTML = node.info ||
+        '<p class="text-gray-400">No additional information.</p>';
+      if (window.MathJax) MathJax.typesetPromise([panelTitle, panelContent]);
+      openPanel();
+    }
+
+    function openPairPanel(srcId, tgtId) {
+      const src = nodeById[srcId], tgt = nodeById[tgtId];
+      const srcName = src?.name || srcId;
+      const tgtName = tgt?.name || tgtId;
+
+      const pair = pairByKey[srcId + ',' + tgtId];
+
+      if (!pair) {
+        panelTitle.innerHTML = srcName + ' and ' + tgtName;
+        panelDesc.innerHTML = '';
+        panelContent.innerHTML =
+          '<p class="text-gray-400">No direct relationship stored. ' +
+          'The obstruction ' + srcName + ' ↛ ' + tgtName +
+          ' follows from other minimal obstructions.</p>';
+        if (window.MathJax) MathJax.typesetPromise([panelTitle, panelContent]);
+        openPanel();
+        return;
+      }
+
+      if (pair.relation === 'obstruction') {
+        panelTitle.innerHTML = srcName + ' ↛ ' + tgtName;
+        panelDesc.innerHTML = '<span class="text-red-600 font-medium">Obstruction</span>';
+        panelContent.innerHTML = pair.info ||
+          '<p class="text-gray-400">No obstruction details provided yet.</p>';
+      } else {
+        panelTitle.innerHTML = srcName + ' → ' + tgtName;
+        const pathIds = pair.path || [];
+        const pathNames = pathIds.map(id => nodeById[id]?.name || id).join(' → ');
+        panelDesc.innerHTML = '<span class="text-blue-600 font-medium">Degeneration path:</span> ' + pathNames;
+
+        let html = '';
+        for (let i = 0; i < pathIds.length - 1; i++) {
+          const eKey = pathIds[i] + ',' + pathIds[i + 1];
+          const edge = edgeByKey[eKey];
+          const fromName = nodeById[pathIds[i]]?.name || pathIds[i];
+          const toName   = nodeById[pathIds[i + 1]]?.name || pathIds[i + 1];
+          html += '<div class="mb-3 pb-3 border-b border-gray-200 last:border-0">';
+          html += '<p class="font-medium text-gray-700">' + fromName + ' → ' + toName + '</p>';
+          if (edge && edge.info) {
+            html += '<div class="mt-1 text-gray-600">' + edge.info + '</div>';
+          } else {
+            html += '<p class="mt-1 text-gray-400 text-sm">No details for this step.</p>';
+          }
+          html += '</div>';
+        }
+        panelContent.innerHTML = html || '<p class="text-gray-400">No details available.</p>';
+      }
+
+      if (window.MathJax) MathJax.typesetPromise([panelTitle, panelDesc, panelContent]);
+      openPanel();
+    }
+
+    function openPanel() {
+      // panel is always visible — just redraw
+      drawScene();
+    }
+    function closePanel() {
+      // clear highlighting but keep panel open
+      activePair = null;
+      selectedNode = null;
+      panelTitle.innerHTML = 'Info';
+      panelDesc.innerHTML = '';
+      panelContent.innerHTML = '<p class="text-gray-400">Click a node to see its info, or click two nodes to see the relationship between them.</p>';
+      if (window.MathJax) MathJax.typesetPromise([panelContent]);
+      drawScene();
+    }
+    closeBtn.addEventListener('click', closePanel);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
+
+    // ---- Boot ------------------------------------------------------------
+    window.addEventListener('resize', () => { resizeCanvas(); drawScene(); });
+    fitAndCenterGraph();
+    // Show welcome message in side panel
+    panelTitle.innerHTML = 'Info';
+    panelContent.innerHTML = '<p class="text-gray-400">Click a node to see its info, or click two nodes to see the relationship between them.</p>';
+    if (window.MathJax?.startup?.promise) {
+      MathJax.startup.promise.then(() => drawScene());
+    } else {
+      drawScene();
+    }
+  });
+  </script>
+</body>
+</html>
